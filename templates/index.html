@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch Ticket Simulator</title>
+    <style>
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 150px);
+            grid-gap: 10px;
+            margin: 20px auto;
+        }
+        .box {
+            width: 150px;
+            height: 150px;
+            background-color: black;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="grid">
+    <div class="box" id="num_1"></div>
+    <div class="box" id="num_2"></div>
+    <div class="box" id="num_3"></div>
+    <div class="box" id="num_4"></div>
+    <div class="box" id="num_5"></div>
+    <div class="box" id="num_6"></div>
+    <div class="box" id="num_7"></div>
+    <div class="box" id="num_8"></div>
+    <div class="box" id="num_9"></div>
+</div>
+
+<p>Total Prize: $<span id="total_prize">{{ total }}</span></p>
+<p>Tickets Scratched: <span id="tickets_scratched">{{ tickets_scratched }}</span></p>
+<button onclick="resetGrid()">Next Ticket</button>
+
+<script>
+    let revealedCount = 0;
+
+    document.querySelectorAll('.box').forEach(box => {
+        box.addEventListener('click', function() {
+            if (!this.classList.contains('revealed')) {
+                revealedCount += 1;
+                fetch('/reveal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ box: this.id, all_revealed: revealedCount === 9 })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    this.innerText = data.value;
+                    this.classList.add('revealed');
+
+                    if (revealedCount === 9) {
+                        document.getElementById('total_prize').innerText = data.total;
+                    }
+                });
+            }
+        });
+    });
+
+    function resetGrid() {
+        revealedCount = 0;
+        fetch('/reset', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    document.querySelectorAll('.box').forEach((box, index) => {
+                        box.innerText = '';
+                        box.classList.remove('revealed');
+                        box.style.backgroundColor = 'black';
+                    });
+                    document.getElementById('tickets_scratched').innerText = data.tickets_scratched;
+                }
+            });
+    }
+</script>
+
+</body>
+</ht
